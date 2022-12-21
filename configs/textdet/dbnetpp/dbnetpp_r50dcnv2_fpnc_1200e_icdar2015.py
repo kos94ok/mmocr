@@ -37,3 +37,5 @@ evaluation = dict(
     metric='hmean-iou',
     save_best='0_hmean-iou:hmean',
     rule='greater')
+
+checkpoint_config = dict(interval=20, by_epoch=False, max_keep_ckpts = 3)
