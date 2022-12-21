@@ -30,4 +30,5 @@ data = dict(
         datasets=test_list,
         pipeline=test_pipeline_1333_736))
 
-evaluation = dict(interval=100, metric='hmean-iou')
+evaluation = dict(interval=250, metric='hmean-iou', by_epoch=False)
+checkpoint_config = dict(interval=50, by_epoch=False, max_keep_ckpts = 3)
