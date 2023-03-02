@@ -14,6 +14,8 @@ from shapely.geometry import Polygon
 
 from mmocr.utils import convert_annotations
 
+import math
+
 
 def collect_files(img_dir, gt_dir):
     """Collect all images and their corresponding groundtruth files.
@@ -35,10 +37,14 @@ def collect_files(img_dir, gt_dir):
     suffixes = ['.png', '.PNG', '.jpg', '.JPG', '.jpeg', '.JPEG']
     # suffixes = ['.png']
 
+    img_dir = './images'
+    gt_dir = './labels'
+
     imgs_list = []
     for suffix in suffixes:
         imgs_list.extend(glob.glob(osp.join(img_dir, '*' + suffix)))
 
+    
     imgs_list = sorted(imgs_list)
     ann_list = sorted(
         [osp.join(gt_dir, gt_file) for gt_file in os.listdir(gt_dir)])
@@ -188,6 +194,7 @@ def process_line(line, contours, words):
     ann_dict = ann_dict.replace("[u',']", "[u'#']")
     ann_dict = yaml.safe_load(ann_dict)
 
+    print(ann_dict)
     X = np.array([ann_dict['x']])
     Y = np.array([ann_dict['y']])
 
@@ -243,6 +250,7 @@ def get_contours_txt(gt_path):
             else:
                 complete_line = tmp_line
                 tmp_line = line
+            print(complete_line)
             contours, words = process_line(complete_line, contours, words)
 
         if tmp_line != '':
@@ -264,31 +272,43 @@ def load_txt_info(gt_file, img_info):
     Returns:
         img_info(dict): The dict of the img and annotation information
     """
-
-    contours, texts = get_contours_txt(gt_file)
+    # contours, texts = get_contours_txt(gt_file)
+  
+    reader = open(gt_file, 'r').readlines()
+    reader = list(map(lambda x: x.replace(' \n', ''), reader))
+    del reader[-1]
     anno_info = []
-    for contour, text in zip(contours, texts):
-        if contour.shape[0] == 2:
-            continue
-        category_id = 1
-        coordinates = np.array(contour).reshape(-1, 2)
-        polygon = Polygon(coordinates)
-        iscrowd = 1 if text == '###' else 0
+    bad_gt = []
+    text = "word"
+    for contour in reader:
+        try:
+          contour = contour.strip().split(',')
+          contour = contour[0].strip().split()
+          num_points = math.floor((len(contour) - 1) / 2) * 2
+          category_id = 1
+          coordinates = np.array(list(map(float, contour[:num_points]))).reshape((-1, 2))
+          polygon = Polygon(coordinates)
+          iscrowd = 1 if text == '###' else 0
 
-        area = polygon.area
-        # convert to COCO style XYWH format
-        min_x, min_y, max_x, max_y = polygon.bounds
-        bbox = [min_x, min_y, max_x - min_x, max_y - min_y]
+          area = polygon.area
+          # convert to COCO style XYWH format
+          min_x, min_y, max_x, max_y = polygon.bounds
+          bbox = [min_x, min_y, max_x - min_x, max_y - min_y]
 
-        anno = dict(
-            iscrowd=iscrowd,
-            category_id=category_id,
-            bbox=bbox,
-            area=area,
-            text=text,
-            segmentation=[contour])
-        anno_info.append(anno)
-
+          anno = dict(
+              iscrowd=iscrowd,
+              category_id=category_id,
+              bbox=bbox,
+              area=area,
+              text=text,
+              segmentation=[contour])
+          anno_info.append(anno)
+        except:
+          bad_gt.append(gt_file)
+          continue
+    
+    if len(bad_gt) > 0:
+      print(bad_gt)
     img_info.update(anno_info=anno_info)
 
     return img_info
@@ -376,7 +396,6 @@ def load_img_info(files):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Convert totaltext annotations to COCO format')
-    parser.add_argument('root_path', help='Totaltext root path')
     parser.add_argument(
         '--nproc', default=1, type=int, help='Number of process')
     args = parser.parse_args()
@@ -385,14 +404,14 @@ def parse_args():
 
 def main():
     args = parse_args()
-    root_path = args.root_path
-    img_dir = osp.join(root_path, 'imgs')
-    gt_dir = osp.join(root_path, 'annotations')
+    root_path = './'
+    img_dir = osp.join(root_path, 'images')
+    gt_dir = osp.join(root_path, 'labels')
 
     set_name = {}
-    for split in ['training', 'test']:
-        set_name.update({split: 'instances_' + split + '.json'})
-        assert osp.exists(osp.join(img_dir, split))
+    for split in ['train']:
+        set_name.update({split: split + '.json'})
+        assert osp.exists(osp.join('./', split + '.json'))
 
     for split, json_name in set_name.items():
         print(f'Converting {split} into {json_name}')
