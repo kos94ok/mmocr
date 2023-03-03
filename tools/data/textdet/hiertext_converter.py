@@ -142,7 +142,7 @@ def main():
                         osp.join(root_path, 'instances_training.json'))
     print('Processing validation set...')
     val_infos = collect_hiertext_info(root_path, args.level, 'val')
-    convert_annotations(val_infos, osp.join(root_path, 'instances_val.json'))
+    convert_annotations(val_infos, osp.join(root_path, 'instances_validation.json'))
     print('Finish')
 
 
