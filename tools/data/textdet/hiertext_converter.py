@@ -114,7 +114,7 @@ def collect_hiertext_info(root_path, level, split, print_every=1000):
             elif level == 'word':
                 for line in paragraph['lines']:
                     for word in line['words']:
-                        anno = collect_level_info(line)
+                        anno = collect_level_info(word)
                         anno_info.append(anno)
         img_info.update(anno_info=anno_info)
         img_infos.append(img_info)
@@ -124,7 +124,6 @@ def collect_hiertext_info(root_path, level, split, print_every=1000):
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Generate training and validation set of HierText ')
-    parser.add_argument('root_path', help='Root dir path of HierText')
     parser.add_argument(
         '--level',
         default='word',
@@ -136,7 +135,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    root_path = args.root_path
+    root_path = './'
     print('Processing training set...')
     training_infos = collect_hiertext_info(root_path, args.level, 'train')
     convert_annotations(training_infos,
