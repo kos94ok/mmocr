@@ -13,7 +13,9 @@ train_pipeline_r18 = [
     dict(
         type='ImgAug',
         args=[['Fliplr', 0.5],
-              dict(cls='Affine', rotate=[-10, 10]), ['Resize', [0.5, 3.0]]]),
+              dict(cls='Affine', rotate=[-10, 10]), ['Resize', [0.5, 3.0]]],
+        clip_invalid_ploys=False
+        ),
     dict(type='EastRandomCrop', target_size=(640, 640)),
     dict(type='DBNetTargets', shrink_ratio=0.4),
     dict(type='Pad', size_divisor=32),
